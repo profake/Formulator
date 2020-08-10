@@ -17,6 +17,7 @@
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/formulaInput"
             android:digits="=0123456789*/+-qwertzuiopasdfghjklyxcvbnm."
+            android:inputType="textNoSuggestions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:maxLines="1"

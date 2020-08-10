@@ -1,41 +1,39 @@
 package com.nasifistiak.formulator;
 
-import android.animation.Animator;
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.card.MaterialCardView;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 public class TabSolverFragment extends Fragment {
     Activity activity;
     Context context;
     String TAG = "Nasif";
-    String input;
     MaterialCardView cardView;
     boolean cardNotOpen = true;
     Animation slide_down;
     Animation slide_up;
+    String input = "";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -57,31 +55,76 @@ public class TabSolverFragment extends Fragment {
         slide_up = AnimationUtils.loadAnimation(context, R.anim.slide_up);
         slide_down = AnimationUtils.loadAnimation(context, R.anim.slide_down);
 
-        final Map <Character, Double> variables = new HashMap<>();
+        final Map<Character, Double> variables = new HashMap<>();
+        disableSelection(formulaInput);
 
-        formulaInput.setOnKeyListener(new View.OnKeyListener() {
+        formulaInput.addTextChangedListener(new TextWatcher() {
+            String initialChar = null;
+            int initCursorPosition = 0;
+
             @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
+            public void onTextChanged(CharSequence charSequence, int start, int before, int after) {
+                char addedChar = 0;
 
-                char typedCharacter = (char) event.getUnicodeChar();
-                String typedCharacterStr = Character.toString(typedCharacter);
-                // perhaps we should just check the entire string, much easier that way
+                int finalCursorPosition = formulaInput.getSelectionStart();
+                if (finalCursorPosition - initCursorPosition > 0) {
+                    addedChar = charSequence.charAt(finalCursorPosition - 1);
+                    Log.d(TAG, "onTextChanged added: " + addedChar);
+                    //added char
+                    if (!variables.containsKey(addedChar)) {
+                        variables.put(addedChar, 0.0);
+                        // TODO: implement addFromMapToView();
+                    }
+                    if (cardNotOpen)
+                        animateAndOpenCardView();
 
-                if(input.matches("[A-Za-z]+")){
-                    // alphabet
-                    if(variables.containsKey(typedCharacter))
-                        formulaInput.setText(input); // already have this char
-                    else
-                        variables.put(typedCharacter, 0.0);
+                } else {
+                    char delChar = initialChar.charAt(initCursorPosition - 1);
+                    Log.d(TAG, "onTextChanged deletedChar: " + delChar);
+                    if (!variables.containsKey(delChar)) {
+                        variables.remove(delChar);
+                    }
                 }
 
-                if(cardNotOpen)
-                    animateAndOpenCardView();
-                input = formulaInput.getText().toString();
+            }
 
-                return true;
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int start, int before, int after) {
+                Log.d(TAG, "textChange beforeTextChanged: " + charSequence);
+                Log.d(TAG, "textChange cursorPosition: " + formulaInput.getSelectionStart());
+                initialChar = String.valueOf(charSequence);
+                initCursorPosition = formulaInput.getSelectionStart();
             }
         });
+
+    }
+
+    private void disableSelection(EditText formulaInput) {
+        formulaInput.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
+
+            public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+                return false;
+            }
+
+            public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+                return false;
+            }
+
+            public boolean onActionItemClicked(ActionMode actionMode, MenuItem item) {
+                return false;
+            }
+
+            public void onDestroyActionMode(ActionMode actionMode) {
+            }
+        });
+
+        formulaInput.setLongClickable(false);
+        formulaInput.setTextIsSelectable(false);
     }
 
     private void animateAndOpenCardView() {
